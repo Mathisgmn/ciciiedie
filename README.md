@@ -9,6 +9,31 @@ L'application MicroCRM est une implémentation simplifiée d'un ["CRM" (Customer
 ![Page d'accueil](./misc/screenshots/screenshot_1.png)
 ![Édition de la fiche d'un individu](./misc/screenshots/screenshot_2.png)
 
+
+## Contribuer
+
+Flux recommandé (simple) :
+
+1. Créer une branche depuis `main` : `feature/*`, `fix/*` ou `chore/*`.
+2. Commiter avec un message court : `feat: ...`, `fix: ...`, `chore: ...`.
+3. Ouvrir une Pull Request vers `main`.
+4. Vérifier la checklist PR et la CI GitHub Actions.
+5. Fusionner uniquement quand tout est vert.
+
+Documentation associée :
+
+- [`docs/git-workflow.md`](./docs/git-workflow.md)
+- [`.github/pull_request_template.md`](./.github/pull_request_template.md)
+- [`docs/merge-and-conflicts.md`](./docs/merge-and-conflicts.md)
+
+## Documentation DevOps
+
+- CI/CD : [`docs/ci-cd.md`](./docs/ci-cd.md)
+- Sécurité : [`docs/security.md`](./docs/security.md)
+- Déploiement staging : [`docs/deploy.md`](./docs/deploy.md)
+- Exécution locale Docker : [`docs/local-dev.md`](./docs/local-dev.md)
+- Kubernetes (approche simple) : [`docs/kubernetes.md`](./docs/kubernetes.md)
+
 ## Code source
 
 ### Organisation
