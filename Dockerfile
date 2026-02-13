@@ -13,8 +13,11 @@ COPY ./back /src
 
 WORKDIR /src
 
-# Utilise Gradle installé dans l'image (plus robuste que ./gradlew dans Docker)
-RUN gradle --no-daemon build
+# Utilise le Gradle Wrapper du projet (version verrouillée),
+# puis normalise les fins de ligne pour éviter les erreurs Windows/CRLF.
+RUN sed -i 's/\r$//' gradlew \
+    && chmod +x gradlew \
+    && ./gradlew --no-daemon build
 
 FROM alpine:3.19 AS front
 

@@ -47,3 +47,18 @@ cd front
 npm ci
 npm run start
 ```
+
+
+## Dépannage Docker (Windows)
+
+Si `docker compose up --build` échoue pendant le build backend avec `gradlew not found` ou une erreur Gradle incompatible :
+
+- vérifier que vous avez bien la dernière version du repository (`git pull`),
+- relancer un build sans cache :
+
+```bash
+docker compose build --no-cache back
+docker compose up
+```
+
+Le Dockerfile normalise maintenant les fins de ligne (`CRLF`) et utilise le **Gradle Wrapper** du projet pour forcer la bonne version de Gradle.
