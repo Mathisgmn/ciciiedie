@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: microcrm-config
+  namespace: microcrm-staging
+data:
+  API_BASE_URL: "http://microcrm-service:8080"
+  SPRING_PROFILES_ACTIVE: "staging"
