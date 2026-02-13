@@ -1,0 +1,14 @@
+# Default owners
+* @maintainers
+
+# Backend domain owners
+/back/ @backend-team @maintainers
+
+# Frontend domain owners
+/front/ @frontend-team @maintainers
+
+# DevOps and infra owners
+/.gitlab-ci.yml @devops-team @maintainers
+/docs/ @devops-team @maintainers
+/k8s/ @devops-team @maintainers
+/infra/ @devops-team @maintainers
