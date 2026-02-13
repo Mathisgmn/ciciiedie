@@ -99,8 +99,10 @@ jobs:
     needs: build
 
     steps:
-      - name: Checkout
+      - name: Checkout (full history for gitleaks commit range)
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Gitleaks (secret scan)
         uses: gitleaks/gitleaks-action@v2
