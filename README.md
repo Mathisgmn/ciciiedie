@@ -153,24 +153,3 @@ docker run -it --rm -p 8080:8080 -p 80:80 -p 443:443 orion-microcrm-standalone:l
 ```
 
 L'application sera disponible sur https://localhost et l'API sur http://localhost:8080.
-
-
-## Contribuer
-
-La contribution est encadrée par une politique Git traçable:
-
-- Workflow branches + conventions: [`docs/git-workflow.md`](./docs/git-workflow.md)
-- Versioning, tags et releases: [`docs/versioning.md`](./docs/versioning.md)
-- Process merge/conflits: [`docs/merge-and-conflicts.md`](./docs/merge-and-conflicts.md)
-- CI/CD et quality gates: [`docs/ci-cd.md`](./docs/ci-cd.md)
-- Développement local conteneurisé: [`docs/local-dev.md`](./docs/local-dev.md)
-- Déploiement Kubernetes: [`docs/kubernetes.md`](./docs/kubernetes.md)
-- Sécurité et contrôles: [`docs/security.md`](./docs/security.md)
-
-### Règles clés
-
-1. Créer une branche courte (`feature/*`, `fix/*`, `chore/*`).
-2. Utiliser les Conventional Commits.
-3. Ouvrir une Merge Request vers `main` (template obligatoire).
-4. Attendre pipeline vert + approbation CODEOWNERS.
-5. Squash & merge uniquement.
