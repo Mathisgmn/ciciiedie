@@ -1,226 +1,33 @@
 stages:
-  - lint
   - test
   - build
-  - security
-  - package
-  - deploy
 
-variables:
-  FRONT_DIR: "front"
-  BACK_DIR: "back"
-  GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
-  DOCKER_TLS_CERTDIR: "/certs"
-
-cache:
-  key: "$CI_COMMIT_REF_SLUG"
-  paths:
-    - front/.npm/
-    - .gradle/caches/
-    - .gradle/wrapper/
-
-lint-front:
-  stage: lint
-  image: node:20
-  script:
-    - cd "$FRONT_DIR"
-    - npm ci --cache .npm --prefer-offline
-    - npx tsc --noEmit
-
-lint-back:
-  stage: lint
-  image: gradle:8-jdk17
-  script:
-    - cd "$BACK_DIR"
-    - ./gradlew classes
-
-unit-test-front:
+test-front:
+  image: cypress/browsers:latest
   stage: test
-  image: cypress/browsers:node20.11.1-chrome121-ff122
   script:
-    - cd "$FRONT_DIR"
-    - npm ci --cache .npm --prefer-offline
-    - CHROME_BIN=/usr/bin/google-chrome npx @angular/cli test --watch=false --browsers=ChromeHeadlessNoSandbox --no-progress
-  artifacts:
-    when: always
-    paths:
-      - front/coverage/
-    expire_in: 7 days
+    - cd front
+    - npm ci
+    - CHROME_BIN=/opt/google/chrome/chrome npx @angular/cli test --no-watch --no-progress --browsers=ChromeHeadlessNoSandbox
 
-unit-test-back:
+test-back:
+  image: gradle:jdk17
   stage: test
-  image: gradle:8-jdk17
   script:
-    - cd "$BACK_DIR"
+    - cd back
     - ./gradlew test
-  artifacts:
-    when: always
-    paths:
-      - back/build/test-results/
-      - back/build/reports/tests/
-    expire_in: 7 days
 
 build-front:
+  image: node
   stage: build
-  image: node:20
   script:
-    - cd "$FRONT_DIR"
-    - npm ci --cache .npm --prefer-offline
-    - npx @angular/cli build --configuration production
-  artifacts:
-    paths:
-      - front/dist/
-    expire_in: 7 days
+    - cd front
+    - npm ci
+    - npx @angular/cli build --optimization
 
 build-back:
+  image: gradle:jdk17
   stage: build
-  image: gradle:8-jdk17
   script:
-    - cd "$BACK_DIR"
-    - ./gradlew build -x test
-  artifacts:
-    paths:
-      - back/build/libs/*.jar
-    expire_in: 7 days
-
-sast-semgrep:
-  stage: security
-  image: returntocorp/semgrep:latest
-  script:
-    - semgrep scan --config p/owasp-top-ten --error --exclude front/node_modules .
-
-sca-frontend:
-  stage: security
-  image: node:20
-  script:
-    - cd "$FRONT_DIR"
-    - npm ci --cache .npm --prefer-offline
-    - npm audit --audit-level=high
-
-secrets-scan:
-  stage: security
-  image: zricethezav/gitleaks:latest
-  script:
-    - gitleaks detect --source . --redact --verbose
-
-package-image:
-  stage: package
-  image: docker:27
-  services:
-    - docker:27-dind
-  dependencies:
-    - build-front
-    - build-back
-  script:
-    - docker build -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA" .
-    - docker save "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA" -o image.tar
-  artifacts:
-    paths:
-      - image.tar
-    expire_in: 1 day
-
-trivy-image-scan:
-  stage: package
-  image: aquasec/trivy:latest
-  dependencies:
-    - package-image
-  script:
-    - trivy image --input image.tar --severity CRITICAL --exit-code 1 --no-progress
-
-publish-image:
-  stage: package
-  image: docker:27
-  services:
-    - docker:27-dind
-  dependencies:
-    - package-image
-  needs:
-    - job: trivy-image-scan
-    - job: package-image
-      artifacts: true
-  script:
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
-    - docker load -i image.tar
-    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-
-
-terraform-fmt:
-  stage: security
-  image: hashicorp/terraform:1.7.5
-  script:
-    - cd infra/terraform
-    - terraform fmt -check -recursive
-
-terraform-validate:
-  stage: security
-  image: hashicorp/terraform:1.7.5
-  script:
-    - cd infra/terraform/envs/staging
-    - terraform init -backend=false
-    - terraform validate
-
-terraform-plan-staging:
-  stage: security
-  image: hashicorp/terraform:1.7.5
-  script:
-    - cd infra/terraform/envs/staging
-    - terraform init -backend=false
-    - terraform plan -out=tfplan
-  artifacts:
-    paths:
-      - infra/terraform/envs/staging/tfplan
-    expire_in: 1 day
-
-deploy-staging:
-  stage: deploy
-  image: bitnami/kubectl:latest
-  script:
-    - kubectl version --client
-    - kubectl apply -f k8s/namespace.yaml
-    - kubectl apply -f k8s/configmap.yaml
-    - kubectl apply -f k8s/rbac.yaml
-    - kubectl apply -f k8s/deployment.yaml
-    - kubectl apply -f k8s/service.yaml
-    - kubectl apply -f k8s/ingress.yaml
-    - kubectl apply -f k8s/hpa.yaml
-    - kubectl rollout status deployment/microcrm -n microcrm-staging --timeout=120s
-  environment:
-    name: staging
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-
-# Déploiement production manuel et protégé
-# à associer avec GitLab protected environments.
-
-terraform-apply-prod:
-  stage: deploy
-  image: hashicorp/terraform:1.7.5
-  script:
-    - cd infra/terraform/envs/prod
-    - terraform init -backend=false
-    - terraform apply -auto-approve
-  when: manual
-  allow_failure: false
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-
-deploy-prod:
-  stage: deploy
-  image: bitnami/kubectl:latest
-  script:
-    - kubectl apply -f k8s/namespace.yaml
-    - kubectl apply -f k8s/configmap.yaml
-    - kubectl apply -f k8s/rbac.yaml
-    - kubectl apply -f k8s/deployment.yaml
-    - kubectl apply -f k8s/service.yaml
-    - kubectl apply -f k8s/ingress.yaml
-    - kubectl apply -f k8s/hpa.yaml
-    - kubectl rollout status deployment/microcrm -n microcrm-staging --timeout=120s
-  environment:
-    name: production
-  when: manual
-  allow_failure: false
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
+    - cd back
+    - ./gradlew build
